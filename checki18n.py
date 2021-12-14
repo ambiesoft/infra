@@ -15,11 +15,16 @@ def main():
                     nargs=1,
                     required=True,
                     help="resource xml")
+    parser.add_argument('-m',
+                    nargs=1,
+                    required=True,
+                    help="i18n CppMacro")
 
     args = parser.parse_args()
 
     dir = args.d[0]
     res = args.r[0]
+    macro = args.m[0]
 
     if not exists(dir):
         exit('{} does not exist'.format(args.d))
@@ -51,14 +56,17 @@ def main():
     for root, subdirs, filenames in os.walk(dir):
         # print('--\nroot = ' + root)
         for filename in filenames:
-            if filename.endswith(".cpp") or filename.endswith(".h"): 
-                with open(os.path.join(root,filename),"r",encoding='utf8') as file:
-                    for line in file:
-                        # match = re.search('I18N\s*L\s*\"([^\\\"]|\\.)*\"', line)
-                        match = re.search('I18N\s*\(.*\"(([^\\\"]|\\.)*)\"', line)
-                        if match:
-                            if match.group(1):
-                                i18ns.append(match.group(1))
+            if filename.endswith(".cpp") or filename.endswith(".h"):
+                try:
+                    with open(os.path.join(root,filename),"r",encoding='utf8') as file:
+                        for line in file:
+                            # match = re.search('I18N\s*L\s*\"([^\\\"]|\\.)*\"', line)
+                            match = re.search(macro + '\s*\(.*\"(([^\\\"]|\\.)*)\"', line)
+                            if match:
+                                if match.group(1):
+                                    i18ns.append(match.group(1))
+                except:
+                    print("An exception occurred in " + filename)
 
     nais = []
     for i18n in i18ns:
