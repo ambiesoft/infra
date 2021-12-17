@@ -5,6 +5,10 @@ import xml.etree.ElementTree as ET
 import os
 import re
 
+def isComment(line):
+    ''' check line is c++ comment '''
+    return re.match('^\\s*//', line)
+
 def main():
     parser = argparse.ArgumentParser(prog='check i18n in complete')
     parser.add_argument('-d',
@@ -60,11 +64,11 @@ def main():
                 try:
                     with open(os.path.join(root,filename),"r",encoding='utf8') as file:
                         for line in file:
-                            # match = re.search('I18N\s*L\s*\"([^\\\"]|\\.)*\"', line)
-                            match = re.search(macro + '\s*\(.*\"(([^\\\"]|\\.)*)\"', line)
-                            if match:
-                                if match.group(1):
-                                    i18ns.append(match.group(1))
+                            if not isComment(line):
+                                match = re.search(macro + '\s*\(.*\"(([^\\\"]|\\.)*)\"', line)
+                                if match:
+                                    if match.group(1):
+                                        i18ns.append(match.group(1))
                 except:
                     print("An exception occurred in " + filename)
 
