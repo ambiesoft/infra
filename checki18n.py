@@ -1,6 +1,8 @@
 
 import argparse
+from operator import contains
 from os.path import exists, isfile, isdir
+from tokenize import group
 import xml.etree.ElementTree as ET
 import os
 import re
@@ -17,9 +19,9 @@ def isCppComment(line):
 def getFirstUnquotedString(str):
     str = str.strip()
     if not str:
-        return None
+        return None, None
     if str[0] != '"':
-        return None
+        return None, None
 
     index = 1
     result = ''
@@ -33,7 +35,7 @@ def getFirstUnquotedString(str):
             result += str[index]
         index = index + 1
         if len(str) <= index:
-            return None
+            return None, None
     return result, index + 1
 
 
@@ -149,7 +151,8 @@ def main():
                                     macro + '\s*\(.*\"(([^\\\"]|\\.)*)\"', line)
                                 if match:
                                     if match.group(1):
-                                        i18ns.append(match.group(1))
+                                        if not match.group(1) in i18ns:
+                                            i18ns.append(match.group(1))
                 except UnicodeDecodeError as e:
                     if filename.lower() == "resource.h":
                         pass
