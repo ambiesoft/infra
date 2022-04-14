@@ -158,6 +158,7 @@ def main():
                         pass
                     else:
                         logging.error(traceback.format_exc())
+                        logging.error(filename)
                 except Exception as e:
                     # sys.stderr.write("An exception occurred in " + filename)
                     logging.error(traceback.format_exc())
