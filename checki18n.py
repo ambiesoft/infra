@@ -1,10 +1,13 @@
 
 import argparse
-from os.path import exists,isfile,isdir
+from os.path import exists, isfile, isdir
 import xml.etree.ElementTree as ET
 import os
 import re
 import sys
+import traceback
+import logging
+
 
 def isCppComment(line):
     ''' check line is c++ comment '''
@@ -17,7 +20,7 @@ def getFirstUnquotedString(str):
         return None
     if str[0] != '"':
         return None
-    
+
     index = 1
     result = ''
     while True:
@@ -33,7 +36,7 @@ def getFirstUnquotedString(str):
             return None
     return result, index + 1
 
-        
+
 def getNameAndValueFromI18nLine(i18nline):
     ''' Obtain name and value from i18n line '''
     first, index = getFirstUnquotedString(i18nline)
@@ -53,25 +56,29 @@ def getNameAndValueFromI18nLine(i18nline):
 
     second, _ = getFirstUnquotedString(i18nline[index:])
     return first, second
-    
+
+
 def main():
     parser = argparse.ArgumentParser(prog='check i18n in complete')
     parser.add_argument('-d',
-                    nargs=1,
-                    required=True,
-                    help="directory that contains files")
+                        nargs=1,
+                        required=True,
+                        help="directory that contains files")
     parser.add_argument('-r',
-                    nargs=1,
-                    required=False,
-                    help="resource xml")
+                        nargs=1,
+                        required=False,
+                        help="resource xml")
     parser.add_argument('-t',
-                    nargs=1,
-                    required=False,
-                    help="i18n.txt file")
+                        nargs=1,
+                        required=False,
+                        help="i18n.txt file")
     parser.add_argument('-m',
-                    nargs=1,
-                    required=True,
-                    help="i18n CppMacro")
+                        nargs=1,
+                        required=True,
+                        help="i18n CppMacro")
+    parser.add_argument('-e',
+                        action='store_true',
+                        help="Shows as entry for i18n.txt")
 
     args = parser.parse_args()
 
@@ -87,7 +94,7 @@ def main():
     if not exists(dir):
         exit('{} does not exist'.format(args.d))
     if not isdir(dir):
-        exit('{} is not a directory');
+        exit('{} is not a directory')
 
     if res:
         if not exists(res):
@@ -104,9 +111,9 @@ def main():
 
     resex = {}
     if res:
-        #xmlデータを読み込みます
+        # xmlデータを読み込みます
         tree = ET.parse(res)
-        #一番上の階層の要素を取り出します
+        # 一番上の階層の要素を取り出します
         root = tree.getroot()
         for child in root:
             if child.tag != 'data':
@@ -118,7 +125,7 @@ def main():
             if name:
                 resex[name] = value
     elif i18nt:
-        with open(i18nt,"r",encoding='utf-8-sig') as i18nFile:
+        with open(i18nt, "r", encoding='utf-8-sig') as i18nFile:
             for i18nline in i18nFile:
                 name, value = getNameAndValueFromI18nLine(i18nline)
                 if name:
@@ -134,15 +141,24 @@ def main():
         for filename in filenames:
             if filename.endswith(".cpp") or filename.endswith(".h"):
                 try:
-                    with open(os.path.join(root,filename),"r",encoding='utf-8-sig') as file:
+                    with open(os.path.join(root, filename), "r", encoding='utf-8-sig') as file:
                         for line in file:
                             if not isCppComment(line):
-                                match = re.search(macro + '\s*\(.*\"(([^\\\"]|\\.)*)\"', line)
+                                # TODO: This search can not find the MACRO which contains '\"'
+                                match = re.search(
+                                    macro + '\s*\(.*\"(([^\\\"]|\\.)*)\"', line)
                                 if match:
                                     if match.group(1):
                                         i18ns.append(match.group(1))
-                except:
-                    sys.stderr.write("An exception occurred in " + filename)
+                except UnicodeDecodeError as e:
+                    if filename.lower() == "resource.h":
+                        pass
+                    else:
+                        logging.error(traceback.format_exc())
+                except Exception as e:
+                    # sys.stderr.write("An exception occurred in " + filename)
+                    logging.error(traceback.format_exc())
+                    # sys.stderr.write(e)
 
     nais = []
     for i18n in i18ns:
@@ -150,7 +166,11 @@ def main():
             nais.append(i18n)
 
     for nai in nais:
-        print(nai)
+        if args.e:
+            print('"{}"=""'.format(nai))
+        else:
+            print(nai)
 
-if  __name__ == '__main__':
+
+if __name__ == '__main__':
     main()
