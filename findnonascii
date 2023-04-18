@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# aa="bbb"
+# echo "\"$aa\""
+
+# US-ASCII以外の文字が含まれているファイルをコミットできないようにする
+IFS=$'\n'
+
+#for file in $(git ls-files | grep -E '\.(cpp|h)$'); do
+#  echo "$file"
+#done
+
+
+# パイプラインの中でエラーが起きた場合に、エラーが起きたコマンドの終了ステータスを返すようにする
+set -o pipefail 
+
+for file in $(git ls-files | grep -E '\.(cpp|h)$'); do
+  # echo "\"$file\""
+  output=$(sed '1s/^\xEF\xBB\xBF//' "$file" | tr -d '\000-\011\013-\177' | tr -d '©' | tr -d '\n' 2>&1 )
+  if [ $? -ne 0 ]; then # 終了ステータスが0でない場合はエラー
+    echo "Error: $output" # エラーメッセージを出力する
+    exit 2
+  fi
+
+  # 変数が空かどうかをテストする
+  if [ -z "$output" ]; then
+    echo -n "OK =>"
+    echo $file
+  else
+    echo -n "ERROR: $file contains non-ASCII characters. => "
+    echo $output
+    LC_ALL=C grep "$output" "$file"
+    exit 1
+  fi
+done
