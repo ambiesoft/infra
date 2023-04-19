@@ -113,9 +113,9 @@ def main():
 
     resex = {}
     if res:
-        # xmlデータを読み込みます
+        # load xml
         tree = ET.parse(res)
-        # 一番上の階層の要素を取り出します
+
         root = tree.getroot()
         for child in root:
             if child.tag != 'data':
