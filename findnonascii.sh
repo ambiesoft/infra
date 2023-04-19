@@ -59,7 +59,7 @@ exitCode=0
   else
     echo -n "ERROR => $file contains non-ASCII characters. => "
     echo "$output" | cut -c 1-255
-    LC_ALL=C grep "$output" "$file"
+    LC_ALL=C grep -n "$output" "$file"
     exitCode=1
   fi
 done
