@@ -50,6 +50,8 @@ for file in $(eval "$command"); do
     exit 2
   fi
 
+exitCode=0
+
   # check empty
   if [ -z "$output" ]; then
     echo -n "OK => "
@@ -58,6 +60,8 @@ for file in $(eval "$command"); do
     echo -n "ERROR => $file contains non-ASCII characters. => "
     echo "$output" | cut -c 1-255
     LC_ALL=C grep "$output" "$file"
-    exit 1
+    exitCode=1
   fi
 done
+
+exit $exitCode
