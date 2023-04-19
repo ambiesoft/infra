@@ -1,7 +1,13 @@
 #!/bin/sh
 
-# aa="bbb"
-# echo "\"$aa\""
+
+DEBUG=false
+
+debugecho() {
+if [ "$DEBUG" = true ]; then
+    echo "DEBUG: $1"
+  fi
+}
 
 # US-ASCII以外の文字が含まれているファイルをコミットできないようにする
 IFS=$'\n'
@@ -10,12 +16,26 @@ IFS=$'\n'
 #  echo "$file"
 #done
 
-
 # パイプラインの中でエラーが起きた場合に、エラーが起きたコマンドの終了ステータスを返すようにする
 set -o pipefail 
 
-for file in $(git ls-files | grep -E '\.(cpp|h)$'); do
-  # echo "\"$file\""
+readarray -t jogai_files < .nonusasciiignore
+# jogai_files=$(echo "${jogai_files[@]}" | tr '\n' ' ')
+output=""
+for t in "${jogai_files[@]}"; do
+  if [ -z "$t" ]; then
+    continue
+  fi
+  output+=" . ':!:$t'"
+  debugecho "t is $t"
+done
+
+debugecho "output is $output"
+command="git ls-files -- $output"
+debugecho "command is $command"
+
+for file in $(eval "$command"); do
+  debugecho "$file"
   output=$(sed '1s/^\xEF\xBB\xBF//' "$file" | tr -d '\000-\011\013-\177' | tr -d '©' | tr -d '\n' 2>&1 )
   if [ $? -ne 0 ]; then # 終了ステータスが0でない場合はエラー
     echo "Error: $output" # エラーメッセージを出力する
@@ -27,7 +47,7 @@ for file in $(git ls-files | grep -E '\.(cpp|h)$'); do
     echo -n "OK =>"
     echo $file
   else
-    echo -n "ERROR: $file contains non-ASCII characters. => "
+    echo -n "ERROR => $file contains non-ASCII characters. => "
     echo $output
     LC_ALL=C grep "$output" "$file"
     exit 1
