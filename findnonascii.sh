@@ -10,7 +10,8 @@ if [ "$DEBUG" = true ]; then
 }
 
 # separator some command uses
-IFS=$'\n'
+IFS=$'
+'
 
 # errors ocurred in a pipe will be returned
 set -o pipefail 
@@ -26,6 +27,7 @@ output=""
 # create command line to $output
 for t in "${jogai_files[@]}"; do
   if [ -z "$t" ]; then
+    debugecho "t is empty"
     continue
   fi
   output+=" . ':!:$t'"
@@ -50,16 +52,18 @@ for file in $(eval "$command"); do
     exit 2
   fi
 
-exitCode=0
+  exitCode=0
 
   # check empty
   if [ -z "$output" ]; then
     echo -n "OK => "
     echo $file
   else
-    echo -n "ERROR => $file contains non-ASCII characters. => "
-    echo "$output" | cut -c 1-255
-    LC_ALL=C grep -n "$output" "$file"
+    echo "ERROR => $file contains non-ASCII characters =>${output:0:10}"
+
+    grepout=${output:0:10}
+    echo $grepout
+    LC_ALL=C grep -n "$grepout" "$file"
     exitCode=1
   fi
 done
