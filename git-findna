@@ -52,6 +52,17 @@ for file in $(eval "$command"); do
     exit 2
   fi
 
+if [ -z "$output" ]; then
+    if grep -q "fam\.cx" "$file"; then
+      output="fam\.cx"
+    fi
+  fi
+if [ -z "$output" ]; then
+  if grep -q "ddo\.jp" "$file"; then
+      output="ddo\.jp"
+  fi
+fi
+
   exitCode=0
 
   # check empty
@@ -59,7 +70,7 @@ for file in $(eval "$command"); do
     echo -n "OK => "
     echo $file
   else
-    echo "ERROR => $file contains non-ASCII characters =>${output:0:10}"
+    echo "ERROR => $file contains forbidden characters =>${output:0:10}"
 
     grepout=${output:0:10}
     echo $grepout
