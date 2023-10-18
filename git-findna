@@ -38,6 +38,8 @@ debugecho "output is $output"
 command="git ls-files -- $output"
 debugecho "command is $command"
 
+exitCode=0
+
 for file in $(eval "$command"); do
   debugecho "$file"
   
@@ -52,18 +54,17 @@ for file in $(eval "$command"); do
     exit 2
   fi
 
-if [ -z "$output" ]; then
+  if [ -z "$output" ]; then
     if grep -q "fam\.cx" "$file"; then
       output="fam\.cx"
     fi
   fi
-if [ -z "$output" ]; then
-  if grep -q "ddo\.jp" "$file"; then
-      output="ddo\.jp"
-  fi
-fi
 
-  exitCode=0
+  if [ -z "$output" ]; then
+    if grep -q "ddo\.jp" "$file"; then
+      output="ddo\.jp"
+    fi
+  fi
 
   # check empty
   if [ -z "$output" ]; then
@@ -71,7 +72,6 @@ fi
     echo $file
   else
     echo "ERROR => $file contains forbidden characters =>${output:0:10}"
-
     grepout=${output:0:10}
     echo $grepout
     LC_ALL=C grep -n "$grepout" "$file"
